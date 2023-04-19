@@ -320,7 +320,7 @@ def visualize(model):
         if args.squeeze_first: fake_imgs = squeeze_layer.inverse(fake_imgs)
         fake_imgs = remove_padding(fake_imgs)
         fake_imgs = fake_imgs.view(-1, im_dim, args.imagesize, args.imagesize)
-        filename   = os.path.join(args.save, 'samples.png')
+        filename   = os.path.join("./", 'samples.png')
         save_image(fake_imgs.cpu().float(), filename, nrow=16, padding=2)
     
 
