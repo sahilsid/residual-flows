@@ -319,9 +319,7 @@ def visualize(model):
         fake_imgs = model(fixed_z, inverse=True).view(-1, *input_size[1:])
         if args.squeeze_first: fake_imgs = squeeze_layer.inverse(fake_imgs)
         fake_imgs = remove_padding(fake_imgs)
-
         fake_imgs = fake_imgs.view(-1, im_dim, args.imagesize, args.imagesize)
-        recon_imgs = recon_imgs.view(-1, im_dim, args.imagesize, args.imagesize)
         filename   = os.path.join(args.save, 'samples.png')
         save_image(fake_imgs.cpu().float(), filename, nrow=16, padding=2)
     
