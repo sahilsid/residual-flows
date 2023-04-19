@@ -227,6 +227,7 @@ elif args.data == 'imagenet64':
         args.imagesize = 64
     
 logger.info('Creating model.')
+n_classes = 1
 
 input_size = (args.batchsize, im_dim + args.padding, args.imagesize, args.imagesize)
 
