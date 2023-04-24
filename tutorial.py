@@ -6,6 +6,8 @@ import numpy as np
 import torch
 from torchvision.utils import save_image
 from lib.resflow import ACT_FNS, ResidualFlow
+import lib.utils as utils
+import lib.layers as layers
 
 # Arguments
 parser = argparse.ArgumentParser()
@@ -74,19 +76,12 @@ args = parser.parse_args()
 if args.seed is None:
     args.seed = np.random.randint(100000)
 
-# logger
-logger = utils.get_logger(logpath=os.path.join("./", 'logs'), filepath=os.path.abspath(__file__))
-logger.info(args)
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 if device.type == 'cuda':
-    logger.info('Found {} CUDA devices.'.format(torch.cuda.device_count()))
     for i in range(torch.cuda.device_count()):
         props = torch.cuda.get_device_properties(i)
-        logger.info('{} \t Memory: {:.2f}GB'.format(props.name, props.total_memory / (1024**3)))
-else:
-    logger.info('WARNING: Using device {}'.format(device))
 
 np.random.seed(args.seed)
 torch.manual_seed(args.seed)
@@ -189,33 +184,27 @@ elif args.data == 'celebahq':
     im_dim = 3
     init_layer = layers.LogitTransform(0.05)
     if args.imagesize != 256:
-        logger.info('Changing image size to 256.')
         args.imagesize = 256
     
 elif args.data == 'celeba_5bit':
     im_dim = 3
     init_layer = layers.LogitTransform(0.05)
     if args.imagesize != 64:
-        logger.info('Changing image size to 64.')
         args.imagesize = 64
     
 elif args.data == 'imagenet32':
     im_dim = 3
     init_layer = layers.LogitTransform(0.05)
     if args.imagesize != 32:
-        logger.info('Changing image size to 32.')
         args.imagesize = 32
     
 elif args.data == 'imagenet64':
     im_dim = 3
     init_layer = layers.LogitTransform(0.05)
     if args.imagesize != 64:
-        logger.info('Changing image size to 64.')
         args.imagesize = 64
     
-logger.info('Creating model.')
 n_classes = 1
-
 input_size = (args.batchsize, im_dim + args.padding, args.imagesize, args.imagesize)
 
 if args.squeeze_first:
@@ -267,9 +256,6 @@ def parallelize(model):
     return torch.nn.DataParallel(model)
 
 
-logger.info(model)
-logger.info('EMA: {}'.format(ema))
-
 
 # Optimization
 def tensor_in(t, a):
@@ -279,7 +265,6 @@ def tensor_in(t, a):
     return False
 
 if (args.resume is not None):
-    logger.info('Resuming model from {}'.format(args.resume))
     with torch.no_grad():
         x = torch.rand(1, *input_size[1:]).to(device)
         model(x)
