@@ -155,6 +155,7 @@ if args.squeeze_first:
 
 def create_and_load_model():
     # Model
+    print("--> Creating Model ...")
     model = ResidualFlow(
         input_size,
         n_blocks=list(map(int, args.nblocks.split('-'))),
@@ -194,7 +195,7 @@ def create_and_load_model():
     with torch.no_grad():
           x = torch.rand(1, *input_size[1:]).to(device)
           model(x)
-    print("Before Loading Checkpoint")
+    print("--> Model created .. loading pretrained weights from ",args.resume)
     with torch.no_grad():
         z = standard_normal_sample([1,256*256*3]).to(device)
         plt.imshow(model(z.view(1,-1),inverse=True).view(256,256,3).cpu().numpy())
@@ -206,7 +207,7 @@ def create_and_load_model():
     model.load_state_dict(state, strict=True)
     del checkpt
     del state
-    
+    print("--> Model Loaded Succesfully!") 
     return model
 
 def parallelize(model):
@@ -224,7 +225,6 @@ def load_image(path):
     
 class NormalizingFlow:
     def __init__(self):
-        print("Creating and loading model ..")
         self.model = create_and_load_model()
     
     def encode(self, x):
@@ -242,7 +242,7 @@ class NormalizingFlow:
             z = standard_normal_sample([1,256*256*3]).to(device)
             x = self.decode(z)
             samples.append(x)
-        return x
+        return samples
     
     def visualize(self, x):
         plt.figure()
