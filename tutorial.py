@@ -152,3 +152,61 @@ input_size = (args.batchsize, im_dim + args.padding, args.imagesize, args.images
 if args.squeeze_first:
     input_size = (input_size[0], input_size[1] * 4, input_size[2] // 2, input_size[3] // 2)
     squeeze_layer = layers.SqueezeLayer(2)
+
+def create_and_load_model():
+    # Model
+    model = ResidualFlow(
+        input_size,
+        n_blocks=list(map(int, args.nblocks.split('-'))),
+        intermediate_dim=512,
+        factor_out=True,
+        quadratic=False,
+        init_layer=init_layer,
+        actnorm=True,
+        fc_actnorm=False,
+        batchnorm=False,
+        dropout=0.,
+        fc=False,
+        coeff=args.coeff,
+        vnorms=args.vnorms,
+        n_lipschitz_iters=None,
+        sn_atol=1e-3,
+        sn_rtol=1e-3,
+        n_power_series=None,
+        n_dist='poisson',
+        n_samples=1,
+        kernels='3-1-3',
+        activation_fn=args.act,
+        fc_end=False,
+        fc_idim=128,
+        n_exact_terms=8,
+        preact=True,
+        neumann_grad=True,
+        grad_in_forward=True,
+        first_resblock=True,
+        learn_p=False,
+        classification=False,
+        n_classes=1,
+        block_type=args.block,
+    )
+
+    model.to(device)
+    with torch.no_grad():
+          x = torch.rand(1, *input_size[1:]).to(device)
+          model(x)
+    print("Before Loading Checkpoint")
+    with torch.no_grad():
+        z = standard_normal_sample([1,256*256*3]).to(device)
+        plt.imshow(model(z.view(1,-1),inverse=True).view(256,256,3).cpu().numpy())
+        plt.show()
+    checkpt = torch.load(args.resume)
+    sd = {k: v for k, v in checkpt['state_dict'].items() if 'last_n_samples' not in k}
+    state = model.state_dict()
+    state.update(sd)
+    model.load_state_dict(state, strict=True)
+    del checkpt
+    del state
+    
+    return model
+def parallelize(model):
+    return torch.nn.DataParallel(model)
