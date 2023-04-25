@@ -196,10 +196,6 @@ def create_and_load_model():
           x = torch.rand(1, *input_size[1:]).to(device)
           model(x)
     print("--> Model created .. loading pretrained weights from ",args.resume)
-    with torch.no_grad():
-        z = standard_normal_sample([1,256*256*3]).to(device)
-        plt.imshow(model(z.view(1,-1),inverse=True).view(256,256,3).cpu().numpy())
-        plt.show()
     checkpt = torch.load(args.resume)
     sd = {k: v for k, v in checkpt['state_dict'].items() if 'last_n_samples' not in k}
     state = model.state_dict()
