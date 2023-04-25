@@ -208,5 +208,42 @@ def create_and_load_model():
     del state
     
     return model
+
 def parallelize(model):
     return torch.nn.DataParallel(model)
+
+
+def preprocess(img):
+  img = img.unsqueeze(0)
+  img, _ = add_padding(img, 32)
+  img    = squeeze_layer(img)
+  return img.to(device)
+
+def load_image(path):
+    return preprocess(torchvision.io.read_image(path)/256)
+    
+class NormalizingFlow:
+    def __init__(self):
+        print("Creating and loading model ..")
+        self.model = create_and_load_model()
+    
+    def encode(self, x):
+        z = self.model(x.view(-1, *input_size[1:])).detach()
+        return z 
+        
+    def decode(self, z):
+        x = self.model(z.view(1,-1),inverse=True).view(-1, *input_size[1:])
+        if args.squeeze_first: x = squeeze_layer.inverse(x)
+        return x.detach().cpu()
+    
+    def sample(self, n=1):
+        samples = []
+        for i in range(n):
+            z = standard_normal_sample([1,256*256*3]).to(device)
+            x = self.decode(z)
+            samples.append(x)
+        return x
+    
+    def visualize(self, x):
+        plt.figure()
+        plt.imshow(x.squeeze().permute(1,2,0).cpu().numpy())
